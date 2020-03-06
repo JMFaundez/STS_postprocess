@@ -1,0 +1,243 @@
+c-----------------------------------------------------------------------
+c  nek5000 user-file template
+c
+c  user specified routines:
+c     - uservp  : variable properties
+c     - userf   : local acceleration term for fluid
+c     - userq   : local source term for scalars
+c     - userbc  : boundary conditions
+c     - useric  : initial conditions
+c     - userchk : general purpose routine for checking errors etc.
+c     - userqtl : thermal divergence for lowMach number flows 
+c     - usrdat  : modify element vertices 
+c     - usrdat2 : modify mesh coordinates
+c     - usrdat3 : general purpose routine for initialization
+c     
+c-----------------------------------------------------------------------
+      subroutine uservp(ix,iy,iz,eg) ! set variable properties
+
+c      implicit none
+
+      integer ix,iy,iz,eg
+     
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e
+c     e = gllel(eg)
+
+      udiff  = 0.0
+      utrans = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf(ix,iy,iz,eg) ! set acceleration term
+c
+c     Note: this is an acceleration term, NOT a force!
+c     Thus, ffx will subsequently be multiplied by rho(x,t).
+c
+c      implicit none
+
+      integer ix,iy,iz,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e
+c     e = gllel(eg)
+
+      ffx = 0.0
+      ffy = 0.0
+      ffz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq(ix,iy,iz,eg) ! set source term
+
+c      implicit none
+
+      integer ix,iy,iz,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e
+c     e = gllel(eg)
+
+      qvol   = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc(ix,iy,iz,iside,eg) ! set up boundary conditions
+c
+c     NOTE ::: This subroutine MAY NOT be called by every process
+c
+c      implicit none
+
+      integer ix,iy,iz,iside,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+c      if (cbc(iside,gllel(eg),ifield).eq.'v01')
+
+      ux   = 0.0
+      uy   = 0.0
+      uz   = 0.0
+      temp = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric(ix,iy,iz,eg) ! set up initial conditions
+
+c      implicit none
+
+      integer ix,iy,iz,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      ux   = 0.0
+      uy   = 0.0
+      uz   = 0.0
+      temp = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk()
+
+c      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*80 infile_bc
+      real*8  ux_bc(lx1,ly1,lz1,lelv),uy_bc(lx1,ly1,lz1,lelv),
+     $      uz_bc(lx1,ly1,lz1,lelv),s_fr(lx1,ly1,lz1,lelv)
+      real*8  ux_pert(lx1,ly1,lz1,lelv),uy_pert(lx1,ly1,lz1,lelv),
+     $      uz_pert(lx1,ly1,lz1,lelv)
+      real dudx(lx1*ly1*lz1,lelv,3) ! field derivative
+      real*8 sin_a(lx1,ly1,lz1,lelv), cos_a(lx1,ly1,lz1,lelv),
+     $        msin_a(lx1,ly1,lz1,lelv)
+      real*8  ut(lx1,ly1,lz1,lelv), un(lx1,ly1,lz1,lelv)
+      real*8  duT(lx1,ly1,lz1,lelv), duT2(lx1,ly1,lz1,lelv)
+      integer ntot
+      
+      ntot = lx1*ly1*lz1*nelt
+      if (nid.eq.0) write(*,*) lx1, ly1, lz1, nelt, ntot
+
+      ! Load the base flow and store it
+      infile_bc = 'mesh_2_BC.bc' 
+      initc(1) = infile_bc
+      call setics
+      call opcopy(ux_bc,uy_bc,uz_bc,vx,vy,vz)
+      ! Load sin and cos angle
+      infile_bc = 'alpha_2d.fld' 
+      initc(1) = infile_bc
+      call setics
+      call copy(sin_a,vx,lx1*ly1*lz1*lelv)
+      call copy(msin_a,vx,lx1*ly1*lz1*lelv)
+      call chsign(msin_a,lx1*ly1*lz1*lelv)
+      call copy(cos_a,vy,lx1*ly1*lz1*lelv)
+      ! Load the velocity field
+      infile_bc = 'fringe_m20.f00008' 
+      initc(1) = infile_bc
+      call setics
+      ! Compute the perturbation 
+      call sub3(ux_pert,vx,ux_bc,lx1*ly1*lz1*lelv) 
+      call sub3(uy_pert,vy,uy_bc,lx1*ly1*lz1*lelv) 
+      if (nid.eq.0) write(*,*) 'Variables initialized' 
+
+      ! Compute tangential velocity
+      call vdot2(ut,vx,vy,cos_a,sin_a,lx1*ly1*lz1*lelv)
+      call vdot2(un,vx,vy,msin_a,cos_a,lx1*ly1*lz1*lelv)
+      if (nid.eq.0) write(*,*) 'Tangential velocity computed'
+      ! Compute normal derivative
+      call gradm1(dudx(1,1,1),dudx(1,1,2),dudx(1,1,3),ut)
+      call vdot2(duT,dudx(1,1,1),dudx(1,1,2),
+     $            msin_a,cos_a,lx1*ly1*lz1*lelv)
+      if (nid.eq.0) write(*,*) 'Normal gradient computed'
+      call outpost(ut,duT,un,pr,t,'tan')
+      if (nid.eq.0) write(*,*) 'Finished'
+      call exitt
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userqtl ! Set thermal divergence
+
+      call userqtl_scig 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat()   ! This routine to modify element vertices
+
+c      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2()  ! This routine to modify mesh coordinates
+
+c      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3()
+
+c      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+
+
+c-----------------------------------------------------------------------
+      subroutine comp_derivat(u,duT,duT2)
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e
+
+      real u  (lx1,ly1,lz1,lelv)
+      real duT  (lx1,ly1,lz1,lelv)
+      real duT2  (lx1,ly1,lz1,lelv)
+      real ur (1) , us (1) , ut(1) 
+c      common /dudxyj/ jacmi(lx1*ly1*lz1,lelv)
+c      real jacmi
+c
+      n    = nx1-1                          ! Polynomial degree
+      nxyz = nx1*ny1*nz1
+
+      do e=1,nelv
+         call local_grad3(ur,us,ut,u,N,e,dxm1,dxtm1)
+
+!     Derivative tensor computed by using the inverse of
+!     the Jacobian array jacmi
+      do k=1,nxyz
+         duT(1,1,k,e) = jacmi(k,e)*ur(k)
+         duT2(1,1,k,e) = ur(k)*rxm1(k,1,1,e)
+      enddo
+      enddo
+
+      return
+      end
