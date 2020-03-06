@@ -4,7 +4,7 @@ clc
 addpath matlab_script/
 
 % Load an unroll data
-L = load('data_int.mat');
+L = load('stsINT3.mat');
 data = L.data_int;
 
 x = data(:,:,1);
@@ -27,6 +27,26 @@ a = acos(dy./L);
 for i=1:nx
   alpha(:,i) = a(i);
 end
+
+figure()
+plot(x(1,:),dy./L)
+
+figure()
+hold on
+plot(x(1,:),abs(dy),'k.')
+plot(x(1,:),dx)
+figure()
+mesh(x,y,x*0)
+
+
+legend('dy','dx')
+ind = 500;
+ar = alpha(1,ind:end);
+xr = x(1,ind:end);
+p = polyfit(xr,ar,10);
+x1 = [0.05 0.1 0.18 0.25 0.28, 0.3];
+alpha_rad = polyval(p,x1) +pi/2
+alpha_deg = alpha_rad*180/pi
 
 cos_a = cos(alpha);
 sin_a = sin(alpha);
@@ -60,15 +80,18 @@ end
 Re = 5.33333e5;
 cf1 = zeros(nx,1);
 cf2 = zeros(nx,1);
+fin = 3;
 for i=1:nx
-  cf1(i) = (-p(1,i) + p(2,i))/(N(2,i) - N(1,i))/Re;
-  cf2(i) = (-T(1,i) + T(2,i))/(N(2,i) - N(1,i))/Re;
+  cf1(i) = (-p(1,i) + p(fin,i))/(N(fin,i) - N(1,i))/Re;
+  cf2(i) = (-T(1,i) + T(fin,i))/(N(fin,i) - N(1,i))/Re;
 end
+
+%cf1 = smoothdata(cf1,'Gaussian',10);
 
 in0 = 500;
 figure()
 subplot(411)
-contourf(S(:,in0:end),N(:,in0:end),p(:,in0:end))
+contourf(S(:,in0:end),N(:,in0:end),p(:,in0:end), 'LineStyle','none')
 xlim([0,0.4])
 ylim([0,0.01])
 ylabel('Normal direction')
@@ -76,19 +99,20 @@ title("$\sqrt{\overline{u_{t}'u_{t}'}}$",'Interpreter','latex')
 colorbar('manual','Position',[0.93, 0.73, 0.02, 0.20])
 
 subplot(412)
-plot(S(1,in0:end),p_max(in0:end))
+plot(S(1,in0:end),p_max(in0:end),'linewidth',1.5)
 xlim([0,0.4])
 ylabel("$\left(\sqrt{\overline{u_{t}'u_{t}'}}\right)_{max}$",...
 	   'Interpreter','latex', 'FontSize',20)
 
+stp = 1;
 subplot(413)
-plot(S(1,in0:5:end),cf1(in0:5:end))
+plot(S(1,in0:stp:end),cf1(in0:stp:end),'linewidth',1.5)
 xlim([0,0.4])
 ylabel("$\frac{1}{Re}\left(\frac{\partial u'_tu'_t}{\partial n}\right)_{n=0}$",...
 	   'Interpreter','latex', 'FontSize',20)
 
 subplot(414)
-plot(S(1,in0:end),cf2(in0:end))
+plot(S(1,in0:end),cf2(in0:end),'linewidth',1.5)
 xlim([0,0.4])
 ylabel('$\frac{1}{Re}\left(\frac{\partial U_T}{\partial n}\right)_{n=0}$',...
 	   'Interpreter','latex', 'FontSize',20)
