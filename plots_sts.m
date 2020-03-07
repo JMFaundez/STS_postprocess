@@ -28,18 +28,20 @@ for i=1:nx
   alpha(:,i) = a(i);
 end
 
-figure()
-plot(x(1,:),dy./L)
+%figure()
+%plot(x(1,:),alpha(1,:))
 
-figure()
-hold on
-plot(x(1,:),abs(dy),'k.')
-plot(x(1,:),dx)
+%figure()
+%plot(x(1,:),dy./L)
+
+%figure()
+%hold on
+%plot(x(1,:),abs(dy),'k.')
+%plot(x(1,:),dx)
 %figure()
 %mesh(x,y,x*0)
+%legend('dy','dx')
 
-
-legend('dy','dx')
 ind = 500;
 ar = alpha(1,ind:end);
 xr = x(1,ind:end);
@@ -80,7 +82,7 @@ end
 Re = 5.33333e5;
 cf1 = zeros(nx,1);
 cf2 = zeros(nx,1);
-fin = 3;
+fin = 15;
 for i=1:nx
   cf1(i) = (-p(1,i) + p(fin,i))/(N(fin,i) - N(1,i))/Re;
   cf2(i) = (-T(1,i) + T(fin,i))/(N(fin,i) - N(1,i))/Re;
