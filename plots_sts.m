@@ -35,8 +35,8 @@ figure()
 hold on
 plot(x(1,:),abs(dy),'k.')
 plot(x(1,:),dx)
-figure()
-mesh(x,y,x*0)
+%figure()
+%mesh(x,y,x*0)
 
 
 legend('dy','dx')
