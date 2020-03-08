@@ -4,7 +4,7 @@ clc
 addpath matlab_script/
 
 % Load an unroll data
-L = load('stsINT3.mat');
+L = load('stsINT2.mat');
 data = L.data_int;
 
 x = data(:,:,1);
