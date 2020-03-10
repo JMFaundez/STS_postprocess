@@ -92,7 +92,7 @@ end
 
 in0 = 500;
 figure()
-subplot(411)
+subplot(222)
 contourf(S(:,in0:end),N(:,in0:end),p(:,in0:end), 'LineStyle','none')
 xlim([0,0.4])
 ylim([0,0.01])
@@ -100,22 +100,25 @@ ylabel('Normal direction')
 title("$\sqrt{\overline{u_{t}'u_{t}'}}$",'Interpreter','latex')
 colorbar('manual','Position',[0.93, 0.73, 0.02, 0.20])
 
-subplot(412)
+subplot(221)
 plot(S(1,in0:end),p_max(in0:end),'linewidth',1.5)
 xlim([0,0.4])
+grid on
 ylabel("$\left(\sqrt{\overline{u_{t}'u_{t}'}}\right)_{max}$",...
 	   'Interpreter','latex', 'FontSize',20)
 
 stp = 1;
-subplot(413)
+subplot(223)
 plot(S(1,in0:stp:end),cf1(in0:stp:end),'linewidth',1.5)
 xlim([0,0.4])
-ylabel("$\frac{1}{Re}\left(\frac{\partial u'_tu'_t}{\partial n}\right)_{n=0}$",...
+grid on
+ylabel("$\frac{1}{Re}\left(\frac{\partial\sqrt{ u'_tu'_t}}{\partial n}\right)_{n=0}$",...
 	   'Interpreter','latex', 'FontSize',20)
 
-subplot(414)
+subplot(224)
 plot(S(1,in0:end),cf2(in0:end),'linewidth',1.5)
 xlim([0,0.4])
+grid on
 ylabel('$\frac{1}{Re}\left(\frac{\partial U_T}{\partial n}\right)_{n=0}$',...
 	   'Interpreter','latex', 'FontSize',20)
 xlabel('Chord')
