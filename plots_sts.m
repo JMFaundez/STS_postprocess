@@ -23,7 +23,8 @@ dx = x(2,:) - x(1,:);
 dy = y(2,:) - y(1,:);
 L = sqrt(dx.^2 + dy.^2);
 a = acos(dy./L);
-
+s = zeros(nx,1);
+s(2:end,1) = cumsum(sqrt((x(1,2:end)-x(1,1:end-1)).^2+(y(1,2:end)-y(1,1:end-1)).^2));
 for i=1:nx
   alpha(:,i) = a(i);
 end
@@ -79,7 +80,11 @@ for i=1:nx
   n_max(i) = N(jmax,i);
 end
 
+in0 = 490;
+x(1,in0)
 Re = 5.33333e5;
+s = s - s(in0);
+s = s*Re;
 cf1 = zeros(nx,1);
 cf2 = zeros(nx,1);
 fin = 15;
@@ -90,35 +95,45 @@ end
 
 %cf1 = smoothdata(cf1,'Gaussian',10);
 
-in0 = 500;
 figure()
 subplot(222)
 contourf(S(:,in0:end),N(:,in0:end),p(:,in0:end), 'LineStyle','none')
 xlim([0,0.4])
 ylim([0,0.01])
 ylabel('Normal direction')
+xlabel('Chord')
 title("$\sqrt{\overline{u_{t}'u_{t}'}}$",'Interpreter','latex')
 colorbar('manual','Position',[0.93, 0.73, 0.02, 0.20])
 
 subplot(221)
-plot(S(1,in0:end),p_max(in0:end),'linewidth',1.5)
-xlim([0,0.4])
+plot(s(in0:end),p_max(in0:end),'linewidth',1.5)
+%xlim([0,0.4])
+xlim([0, max(s)])
 grid on
 ylabel("$\left(\sqrt{\overline{u_{t}'u_{t}'}}\right)_{max}$",...
 	   'Interpreter','latex', 'FontSize',20)
 
 stp = 1;
 subplot(223)
-plot(S(1,in0:stp:end),cf1(in0:stp:end),'linewidth',1.5)
-xlim([0,0.4])
+plot(s(in0:stp:end),cf1(in0:stp:end),'linewidth',1.5)
+xlabel("$Re_s$",'Interpreter','latex','FontSize',14)
+%xlim([0,0.4])
+xlim([0, max(s)])
 grid on
 ylabel("$\frac{1}{Re}\left(\frac{\partial\sqrt{ u'_tu'_t}}{\partial n}\right)_{n=0}$",...
 	   'Interpreter','latex', 'FontSize',20)
 
 subplot(224)
-plot(S(1,in0:end),cf2(in0:end),'linewidth',1.5)
-xlim([0,0.4])
+plot(s(in0:end),cf2(in0:end),'linewidth',1.5)
+xlim([0, max(s)])
 grid on
 ylabel('$\frac{1}{Re}\left(\frac{\partial U_T}{\partial n}\right)_{n=0}$',...
 	   'Interpreter','latex', 'FontSize',20)
-xlabel('Chord')
+xlabel("$Re_s$",'Interpreter','latex','FontSize',16)
+
+
+figure()
+plot(S(1,in0:end), s(in0:end))
+[var ind] = min(abs(s-30300))
+
+x(1,ind)
